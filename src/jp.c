@@ -557,3 +557,27 @@ enum jp_tfn jp_member_tfn(struct jp_member src){
 struct jp_value jp_member_value(struct jp_member src){
     return jp_element_value(jp_member_element(src));
 }
+int jp_member_namelen(struct jp_member src){
+    if(!src.state.valid)
+        return 0;
+
+    size_t i = 0, j = 0;
+    i += jp_parse_ws(&src.state.c[i]);
+    j = jp_parse_string(&src.state.c[i]);
+    return j-2;
+}
+int jp_value_strlen(struct jp_value src){
+    if(!src.state.valid)
+        return 0;
+
+    size_t i = 0, j = 0;
+    i += jp_parse_ws(&src.state.c[i]);
+    j = jp_parse_string(&src.state.c[i]);
+    return j-2;
+}
+int jp_element_strlen(struct jp_element src){
+    return jp_value_strlen(jp_element_value(src));
+}
+int jp_member_strlen(struct jp_member src){
+    return jp_element_strlen(jp_member_element(src));
+}
