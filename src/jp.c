@@ -389,6 +389,9 @@ struct jp_member jp_object_member(struct jp_object src){
     struct jp_member dst = JP_COPY(src);
     if(src.state.c[i] == '{'){
         i++;
+        i += jp_parse_ws(&src.state.c[i]);
+        if(src.state.c[i] == '}')
+            dst.state.valid = 0;
         dst.state.c = &src.state.c[i];
 #ifdef JP_CALCULATE_SIZE
         dst.state.size = jp_parse_member(dst.state.c);
@@ -407,6 +410,9 @@ struct jp_element jp_array_element(struct jp_array src){
     i += jp_parse_ws(&src.state.c[i]);
     if(src.state.c[i] == '['){
         i++;
+        i += jp_parse_ws(&src.state.c[i]);
+        if(src.state.c[i] == ']')
+            dst.state.valid = 0;
         dst.state.c = &src.state.c[i];
 #ifdef JP_CALCULATE_SIZE
         dst.state.size = jp_parse_element(dst.state.c);
