@@ -459,7 +459,7 @@ int jp_value_number(const struct jp_value src, double *dst){
         return 0;
 
     int i = 0;
-    sscanf(src.state.c, "\"%lf%n\"", dst, &i);
+    sscanf(src.state.c, "%lf%n", dst, &i);
     return i-1;
 }
 int jp_member_name(const struct jp_member src, char *dst, size_t dst_size){
