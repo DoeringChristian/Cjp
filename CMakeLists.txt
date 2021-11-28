@@ -12,3 +12,7 @@ file(GLOB SRC_FILES "src/*.c")
 include_directories("include/")
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
+
+file(COPY "res" DESTINATION "./")
+
+target_link_libraries(${PROJECT_NAME} m)

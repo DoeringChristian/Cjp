@@ -38,16 +38,17 @@ static const double d_nan = (0.0f / 0.0f);
 
 struct jp_state{
     int valid;
-    const char *c;
     int size;
-#if 0
     enum jp_type type;
     size_t index;
     union{
-        const char *buf;
-        FILE *fp;
+        struct{
+            const char *buf;
+        };
+        struct{
+            FILE *fp;
+        };
     };
-#endif
 };
 
 struct jp_object{
@@ -70,11 +71,15 @@ struct jp_array{
     struct jp_state state;
 };
 
-char jp_state_getc(const struct jp_state *src, size_t offset);
+char jp_state_getc(const struct jp_state src, size_t offset);
+struct jp_state jp_state_offset(struct jp_state src, size_t offset);
+int jp_state_memcmp(struct jp_state src, const void *src2, size_t src_size);
 
 struct jp_state jp_state(const char *src);
+struct jp_state jp_state_file(FILE *fp);
 
 struct jp_element jp_element(const char *src);
+struct jp_element jp_element_file(FILE *fp);
 
 struct jp_element jp_element_next(struct jp_element src);
 struct jp_value jp_element_value(struct jp_element src);
@@ -114,35 +119,36 @@ int jp_value_number(struct jp_value src, double *dst);
 enum jp_tfn jp_value_tfn(struct jp_value src);
 
 
-int jp_parse_ws(const char *cur);
-int jp_parse_sign(const char *cur);
-int jp_parse_onenine(const char *cur);
-int jp_parse_digit(const char *cur);
-int jp_parse_digits(const char *cur);
-int jp_parse_fraction(const char *cur);
-int jp_parse_exponent(const char *cur);
-int jp_parse_intager(const char *cur);
-int jp_parse_number(const char *cur);
-int jp_parse_hex(const char *cur);
-int jp_parse_escape(const char *cur);
-int jp_parse_character(const char *cur);
-int jp_parse_characters(const char *cur);
-int jp_parse_string(const char *cur);
+int jp_parse_ws(struct jp_state src);
+int jp_parse_sign(struct jp_state src);
+int jp_parse_onenine(struct jp_state src);
+int jp_parse_digit(struct jp_state src);
+int jp_parse_digits(struct jp_state src);
+int jp_parse_fraction(struct jp_state src);
+int jp_parse_exponent(struct jp_state src);
+int jp_parse_intager(struct jp_state src);
+int jp_parse_number(struct jp_state src);
+int jp_parse_hex(struct jp_state src);
+int jp_parse_escape(struct jp_state src);
+int jp_parse_character(struct jp_state src);
+int jp_parse_characters(struct jp_state src);
+int jp_parse_string(struct jp_state src);
 
-int jp_parse_element(const char *cur);
-int jp_parse_elements(const char *cur);
-int jp_parse_array(const char *cur);
-int jp_parse_member(const char *cur);
-int jp_parse_members(const char *cur);
-int jp_parse_object(const char *cur);
-int jp_parse_value(const char *cur);
-int jp_parse_json(const char *cur);
+int jp_parse_element(struct jp_state src);
+int jp_parse_elements(struct jp_state src);
+int jp_parse_array(struct jp_state src);
+int jp_parse_member(struct jp_state src);
+int jp_parse_members(struct jp_state src);
+int jp_parse_object(struct jp_state src);
+int jp_parse_value(struct jp_state src);
+int jp_parse_json(struct jp_state src);
 
-int jp_string_read(const char *cur, char *dst, size_t dst_size);
-int jp_string_len(const char *cur);
-int jp_string_comp(const char *cur, const char *str);
+int jp_string_read(struct jp_state src, char *dst, size_t dst_size);
+int jp_string_len(struct jp_state src);
+int jp_string_comp(struct jp_state src, const char *str);
 
 int jp_utf8_encode(char *dst, uint32_t utf);
-int jp_atix32(const char *src, uint32_t *dst);
+int jp_atoix32(struct jp_state src, uint32_t *dst);
+int jp_atod(struct jp_state src, double *dst);
 
 #endif //JP_H

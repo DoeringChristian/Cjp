@@ -65,7 +65,22 @@ int main(){
         printf("%s\n\n", buf);
     }
 
-    printf("%s\n\n", e3.state.c);
+    printf("%s\n\n", e3.state.buf);
+
+    FILE *fp = fopen("res/test.json", "r");
+
+    e = jp_element_file(fp);
+
+    struct jp_member m = jp_element_member(e);
+
+    char buf[100] = {0};
+
+    jp_member_name(m, buf, 100);
+
+    double d;
+    jp_member_number(m, &d);
+
+    printf("%s: %lf\n", buf, d);
 
 
 #if 0
