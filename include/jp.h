@@ -71,7 +71,7 @@ struct jp_array{
     struct jp_state state;
 };
 
-char jp_state_getc(const struct jp_state src, size_t offset);
+char jp_state_getat(const struct jp_state src, size_t offset);
 struct jp_state jp_state_offset(struct jp_state src, size_t offset);
 int jp_state_memcmp(struct jp_state src, const void *src2, size_t src_size);
 

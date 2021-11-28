@@ -2,28 +2,31 @@
 
 int jp_parse_ws(struct jp_state src){
     size_t i = 0;
-    while(jp_state_getc(src, i) == ' ' || jp_state_getc(src, i) == '\n' || jp_state_getc(src, i) == '\r' || jp_state_getc(src, i) == '\t')
+    char c;
+    while((c = jp_state_getat(src, i)) == ' ' || c == '\n' || c == '\r' || c == '\t')
         i++;
     return i;
 }
 
 int jp_parse_sign(struct jp_state src){
     size_t i = 0;
-    if(jp_state_getc(src, i) == '+' || jp_state_getc(src, i) == '-')
+    char c;
+    if((c = jp_state_getat(src, i)) == '+' || c == '-')
         i++;
     return i;
 }
 
 int jp_parse_onenine(struct jp_state src){
     size_t i = 0;
-    if(jp_state_getc(src, i) >= '1' && jp_state_getc(src, i) <= '9')
+    char c;
+    if((c = jp_state_getat(src, i)) >= '1' && c <= '9')
         i++;
     return i;
 }
 
 int jp_parse_digit(struct jp_state src){
     size_t i = 0;
-    if(jp_state_getc(src, i) == '0')
+    if(jp_state_getat(src, i) == '0')
         i++;
     else if(jp_parse_onenine(src) == 1)
         i++;
@@ -40,7 +43,7 @@ int jp_parse_digits(struct jp_state src){
 
 int jp_parse_fraction(struct jp_state src){
     size_t i = 0;
-    if(jp_state_getc(src, i) == '.'){
+    if(jp_state_getat(src, i) == '.'){
         i++;
         i += jp_parse_digits(jp_state_offset(src, i));
     }
@@ -49,7 +52,7 @@ int jp_parse_fraction(struct jp_state src){
 
 int jp_parse_exponent(struct jp_state src){
     size_t i = 0;
-    if(jp_state_getc(src, i) == 'E' || jp_state_getc(src, i) == 'e'){
+    if(jp_state_getat(src, i) == 'E' || jp_state_getat(src, i) == 'e'){
         i++;
         i += jp_parse_sign(jp_state_offset(src, i));
         i += jp_parse_digits(jp_state_offset(src, i));
@@ -76,9 +79,9 @@ int jp_parse_hex(struct jp_state src){
     size_t i = 0;
     if(jp_parse_digit(jp_state_offset(src, i)) == 1)
         i++;
-    else if(jp_state_getc(src, i) >= 'A' && jp_state_getc(src, i) <= 'F')
+    else if(jp_state_getat(src, i) >= 'A' && jp_state_getat(src, i) <= 'F')
         i++;
-    else if(jp_state_getc(src, i) >= 'a' && jp_state_getc(src, i) <= 'f')
+    else if(jp_state_getat(src, i) >= 'a' && jp_state_getat(src, i) <= 'f')
         i++;
     return i;
 }
@@ -86,23 +89,23 @@ int jp_parse_hex(struct jp_state src){
 int jp_parse_escape(struct jp_state src){
     size_t i = 0;
     size_t j = 0;
-    if(jp_state_getc(src, i) == '"')
+    if(jp_state_getat(src, i) == '"')
         i++;
-    else if(jp_state_getc(src, i) == '\\')
+    else if(jp_state_getat(src, i) == '\\')
         i++;
-    else if(jp_state_getc(src, i) == '/')
+    else if(jp_state_getat(src, i) == '/')
         i++;
-    else if(jp_state_getc(src, i) == 'b')
+    else if(jp_state_getat(src, i) == 'b')
         i++;
-    else if(jp_state_getc(src, i) == 'f')
+    else if(jp_state_getat(src, i) == 'f')
         i++;
-    else if(jp_state_getc(src, i) == 'n')
+    else if(jp_state_getat(src, i) == 'n')
         i++;
-    else if(jp_state_getc(src, i) == 'r')
+    else if(jp_state_getat(src, i) == 'r')
         i++;
-    else if(jp_state_getc(src, i) == 't')
+    else if(jp_state_getat(src, i) == 't')
         i++;
-    else if(jp_state_getc(src, i) == 'u'){
+    else if(jp_state_getat(src, i) == 'u'){
         i++;
         j += jp_parse_hex(jp_state_offset(src, i+j));
         j += jp_parse_hex(jp_state_offset(src, i+j));
@@ -119,10 +122,10 @@ int jp_parse_escape(struct jp_state src){
 int jp_parse_character(struct jp_state src){
     size_t i = 0;
     size_t j = 0;
-    if(jp_state_getc(src, i) >= ' ' && jp_state_getc(src, i) <= '~' && jp_state_getc(src, i) != '"' && jp_state_getc(src, i) != '\\'){
+    if(jp_state_getat(src, i) >= ' ' && jp_state_getat(src, i) <= '~' && jp_state_getat(src, i) != '"' && jp_state_getat(src, i) != '\\'){
         i++;
     }
-    else if(jp_state_getc(src, i) == '\\'){
+    else if(jp_state_getat(src, i) == '\\'){
         i++;
         j = jp_parse_escape(jp_state_offset(src, i+j));
         if(j > 0)
@@ -144,12 +147,12 @@ int jp_parse_characters(struct jp_state src){
 int jp_parse_string(struct jp_state src){
     size_t i = 0;
     size_t j = 0;
-    if(jp_state_getc(src, i) == '"')
+    if(jp_state_getat(src, i) == '"')
         i++;
     if(i == 1)
         j += jp_parse_characters(jp_state_offset(src, i));
     i += j;
-    if(jp_state_getc(src, i) == '"')
+    if(jp_state_getat(src, i) == '"')
         return i+1;
     return 0;
 }
@@ -172,7 +175,7 @@ int jp_parse_elements(struct jp_state src){
     size_t j = 0;
     while((j = jp_parse_element(jp_state_offset(src, i))) > 0){
         i += j;
-        if(jp_state_getc(src, i) == ',')
+        if(jp_state_getat(src, i) == ',')
             i++;
         else
             break;
@@ -183,13 +186,13 @@ int jp_parse_elements(struct jp_state src){
 int jp_parse_array(struct jp_state src){
     size_t i = 0;
     size_t j = 0;
-    if(jp_state_getc(src, i) == '['){
+    if(jp_state_getat(src, i) == '['){
         i++;
         if((j = jp_parse_elements(jp_state_offset(src, i))) > 0)
             i += j;
         else if((j = jp_parse_ws(jp_state_offset(src, i))) > 0)
             i += j;
-        if(jp_state_getc(src, i) == ']'){
+        if(jp_state_getat(src, i) == ']'){
             i++;
             return i;
         }
@@ -204,7 +207,7 @@ int jp_parse_member(struct jp_state src){
     if((j = jp_parse_string(jp_state_offset(src, i))) > 0){
         i += j;
         i += jp_parse_ws(jp_state_offset(src, i));
-        if(jp_state_getc(src, i) == ':'){
+        if(jp_state_getat(src, i) == ':'){
             i++;
             if((j = jp_parse_element(jp_state_offset(src, i))) > 0){
                 i += j;
@@ -220,7 +223,7 @@ int jp_parse_members(struct jp_state src){
     size_t j = 0;
     while((j = jp_parse_member(jp_state_offset(src, i))) > 0){
         i += j;
-        if(jp_state_getc(src, i) == ',')
+        if(jp_state_getat(src, i) == ',')
             i++;
         else
             break;
@@ -231,13 +234,13 @@ int jp_parse_members(struct jp_state src){
 int jp_parse_object(struct jp_state src){
     size_t i = 0;
     size_t j = 0;
-    if(jp_state_getc(src, i) == '{'){
+    if(jp_state_getat(src, i) == '{'){
         i++;
         if((j = jp_parse_members(jp_state_offset(src, i))) > 0)
             i += j;
         else if((j = jp_parse_ws(jp_state_offset(src, i))) > 0)
             i += j;
-        if(jp_state_getc(src, i) == '}'){
+        if(jp_state_getat(src, i) == '}'){
             i++;
             return i;
         }
@@ -270,11 +273,11 @@ int jp_parse_json(struct jp_state src){
 int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
     size_t i = 0, j = 0;
     uint32_t utf = 0;
-    if(jp_state_getc(src, i) == '"'){
+    if(jp_state_getat(src, i) == '"'){
         i++;
         int escape = 0;
-        for(j = 0;escape || jp_state_getc(src, i) != '"' & j < dst_size;i++){
-            char c = jp_state_getc(src, i);
+        for(j = 0;escape || jp_state_getat(src, i) != '"' & j < dst_size;i++){
+            char c = jp_state_getat(src, i);
             if(c == '\\')
                 escape = 1;
             else if(escape){
@@ -331,11 +334,11 @@ int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
 int jp_string_len(struct jp_state src){
     size_t i = 0, j = 0;
     uint32_t utf = 0;
-    if(jp_state_getc(src, i) == '"'){
+    if(jp_state_getat(src, i) == '"'){
         i++;
         int escape = 0;
-        for(j = 0;escape || jp_state_getc(src, i) != '"';i++){
-            char c = jp_state_getc(src, i);
+        for(j = 0;escape || jp_state_getat(src, i) != '"';i++){
+            char c = jp_state_getat(src, i);
             if(c == '\\')
                 escape = 1;
             else if(escape){
@@ -391,13 +394,13 @@ int jp_string_comp(struct jp_state src, const char *str){
     size_t i = 0, j = 0;
     uint32_t utf = 0;
     size_t str_len = strlen(str);
-    if(jp_state_getc(src, i) == '"'){
+    if(jp_state_getat(src, i) == '"'){
         i++;
         int escape = 0;
-        for(j = 0;escape || jp_state_getc(src, i) != '"';i++){
+        for(j = 0;escape || jp_state_getat(src, i) != '"';i++){
             if(j >= str_len)
                 return 0;
-            char c = jp_state_getc(src, i);
+            char c = jp_state_getat(src, i);
             if(c == '\\')
                 escape = 1;
             else if(escape){
@@ -501,12 +504,12 @@ int jp_atoix32(struct jp_state src, uint32_t *dst){
     *dst = 0;
     for(size_t i = 0;i < 4;i++){
         *dst *= 0x10;
-        if(jp_state_getc(src, i) >= 0 && jp_state_getc(src, i) <= 9)
-            *dst += jp_state_getc(src, i) - '0';
-        else if(jp_state_getc(src, i) >= 'a' && jp_state_getc(src, i) <= 'f')
-            *dst += jp_state_getc(src, i) - 'a' + 10;
-        else if(jp_state_getc(src, i) >= 'A' && jp_state_getc(src, i) >= 'F')
-            *dst += jp_state_getc(src, i) - 'A' + 10;
+        if(jp_state_getat(src, i) >= 0 && jp_state_getat(src, i) <= 9)
+            *dst += jp_state_getat(src, i) - '0';
+        else if(jp_state_getat(src, i) >= 'a' && jp_state_getat(src, i) <= 'f')
+            *dst += jp_state_getat(src, i) - 'a' + 10;
+        else if(jp_state_getat(src, i) >= 'A' && jp_state_getat(src, i) >= 'F')
+            *dst += jp_state_getat(src, i) - 'A' + 10;
     }
     return 1;
 }
@@ -585,7 +588,7 @@ struct jp_element jp_element_next(struct jp_element src){
     size_t i = 0;
     struct jp_element dst = JP_COPY(src);
     i += jp_parse_element(jp_state_offset(src.state, i));
-    if(jp_state_getc(src.state, i) == ','){
+    if(jp_state_getat(src.state, i) == ','){
         i++;
         dst.state = jp_state_offset(src.state, i);
 #ifdef JP_CALCULATE_SIZE
@@ -603,7 +606,7 @@ struct jp_member jp_member_next(struct jp_member src){
     size_t i = 0;
     struct jp_member dst = JP_COPY(src);
     i += jp_parse_member(jp_state_offset(src.state, i));
-    if(jp_state_getc(src.state, i) == ','){
+    if(jp_state_getat(src.state, i) == ','){
         i++;
         i += jp_parse_ws(jp_state_offset(src.state, i));
         dst.state = jp_state_offset(src.state, i);
@@ -637,7 +640,7 @@ struct jp_element jp_member_element(struct jp_member src){
     i += jp_parse_ws(jp_state_offset(src.state, i));
     i += jp_parse_string(jp_state_offset(src.state, i));
     i += jp_parse_ws(jp_state_offset(src.state, i));
-    if(jp_state_getc(src.state, i) == ':'){
+    if(jp_state_getat(src.state, i) == ':'){
         i++;
         dst.state = jp_state_offset(src.state, i);
 #ifdef JP_CALCULATE_SIZE
@@ -654,10 +657,10 @@ struct jp_member jp_object_member(struct jp_object src){
 
     size_t i = 0;
     struct jp_member dst = JP_COPY(src);
-    if(jp_state_getc(src.state, i) == '{'){
+    if(jp_state_getat(src.state, i) == '{'){
         i++;
         i += jp_parse_ws(jp_state_offset(src.state, i));
-        if(jp_state_getc(src.state, i) == '}')
+        if(jp_state_getat(src.state, i) == '}')
             dst.state.valid = 0;
         dst.state = jp_state_offset(src.state, i);
 #ifdef JP_CALCULATE_SIZE
@@ -675,10 +678,10 @@ struct jp_element jp_array_element(struct jp_array src){
     size_t i = 0;
     struct jp_element dst = JP_COPY(src);
     i += jp_parse_ws(jp_state_offset(src.state, i));
-    if(jp_state_getc(src.state, i) == '['){
+    if(jp_state_getat(src.state, i) == '['){
         i++;
         i += jp_parse_ws(jp_state_offset(src.state, i));
-        if(jp_state_getc(src.state, i) == ']')
+        if(jp_state_getat(src.state, i) == ']')
             dst.state.valid = 0;
         dst.state = jp_state_offset(src.state, i);
 #ifdef JP_CALCULATE_SIZE
@@ -846,7 +849,7 @@ int jp_member_strlen(struct jp_member src){
     return jp_element_strlen(jp_member_element(src));
 }
 
-char jp_state_getc(struct jp_state src, size_t offset){
+char jp_state_getat(struct jp_state src, size_t offset){
     char buf[1];
     switch(src.type){
     case JP_TYPE_BUF:
@@ -874,7 +877,7 @@ struct jp_state jp_state_offset(struct jp_state src, size_t offset){
 }
 int jp_state_memcmp(struct jp_state src1, const void *src2, size_t src_size){
     for(size_t i = 0;i < src_size;i++){
-        if(jp_state_getc(src1, i) != ((char *)src2)[i])
+        if(jp_state_getat(src1, i) != ((char *)src2)[i])
             return 1;
     }
     return 0;
@@ -887,25 +890,25 @@ int jp_atod(struct jp_state src, double *dst){
     int neg = 0, exp_neg = 0;
     char c = 0;
     double tmp1 = 0, tmp2 = 0;
-    if(jp_state_getc(src, i) == '-')
+    if(jp_state_getat(src, i) == '-')
         neg = 1;
-    for(;(c = jp_state_getc(src, i)) >= '0' && c <= '9';i++){
+    for(;(c = jp_state_getat(src, i)) >= '0' && c <= '9';i++){
         *dst *= 10;
         *dst += c - '0';
     }
-    if((c = jp_state_getc(src, i)) == '.'){
+    if((c = jp_state_getat(src, i)) == '.'){
         i++;
         tmp2 = 0.1;
-        for(;(c = jp_state_getc(src, i)) >= '0' && c <= '9';i++){
+        for(;(c = jp_state_getat(src, i)) >= '0' && c <= '9';i++){
             tmp1 *= 10;
             tmp2 /= 10;
             tmp1 += c - '0';
         }
         *dst += tmp1 * tmp2;
     }
-    if((c = jp_state_getc(src, i)) == 'e' || c == 'E'){
+    if((c = jp_state_getat(src, i)) == 'e' || c == 'E'){
         i++;
-        c = jp_state_getc(src, i);
+        c = jp_state_getat(src, i);
         if(c == '+'){
             i++;
             exp_neg = 0;
@@ -915,7 +918,7 @@ int jp_atod(struct jp_state src, double *dst){
             exp_neg = 1;
         }
         tmp1 = 0;
-        for(;(c = jp_state_getc(src, i)) >= '0' && c <= '9';i++){
+        for(;(c = jp_state_getat(src, i)) >= '0' && c <= '9';i++){
             tmp1 *= 10;
             tmp1 += c - '0';
         }
