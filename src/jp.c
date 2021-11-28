@@ -108,7 +108,7 @@ int jp_parse_escape(const char *cur){
         j += jp_parse_hex(&cur[i+j]);
         j += jp_parse_hex(&cur[i+j]);
         j += jp_parse_hex(&cur[i+j]);
-        if(j == 3)
+        if(j == 4)
             i += j;
         else
             i = 0;
@@ -125,7 +125,7 @@ int jp_parse_character(const char *cur){
     else if(cur[i] == '\\'){
         i++;
         j = jp_parse_escape(&cur[i+j]);
-        if(j == 1)
+        if(j > 0)
             i += j;
         else
             i = 0;
@@ -134,10 +134,10 @@ int jp_parse_character(const char *cur){
 }
 
 int jp_parse_characters(const char *cur){
-    size_t i = 0;
+    size_t i = 0, j = 0;
 
-    while(jp_parse_character(&cur[i]) == 1)
-        i++;
+    while((j = jp_parse_character(&cur[i])) > 0)
+        i += j;
     return i;
 }
 
@@ -267,6 +267,248 @@ int jp_parse_json(const char *cur){
     return jp_parse_element(cur);
 }
 
+int jp_string_read(const char *cur, char *dst, size_t dst_size){
+    size_t i = 0, j = 0;
+    uint32_t utf = 0;
+    if(cur[i] == '"'){
+        i++;
+        int escape = 0;
+        for(j = 0;escape || cur[i] != '"' & j < dst_size;i++){
+            char c = cur[i];
+            if(c == '\\')
+                escape = 1;
+            else if(escape){
+                switch(c){
+                case '"':
+                    dst[j] = '"';
+                    j++;
+                    break;
+                case '\\':
+                    dst[j] = '\\';
+                    j++;
+                    break;
+                case '/':
+                    dst[j] = '/';
+                    j++;
+                    break;
+                case 'b':
+                    dst[j] = '\b';
+                    j++;
+                    break;
+                case 'f':
+                    dst[j] = '\f';
+                    j++;
+                    break;
+                case 'n':
+                    dst[j] = '\n';
+                    j++;
+                    break;
+                case 'r':
+                    dst[j] = '\r';
+                    j++;
+                    break;
+                case 't':
+                    dst[j] = '\t';
+                    j++;
+                    break;
+                case 'u':
+                    jp_atix32(&cur[i], &utf);
+                    i += 4;
+                    j += jp_utf8_encode(&dst[j], utf);
+                    break;
+                }
+                escape = 0;
+            }
+            else{
+                dst[j] = c;
+                j++;
+            }
+        }
+        return j;
+    }
+    return 0;
+}
+int jp_string_len(const char *cur){
+    size_t i = 0, j = 0;
+    uint32_t utf = 0;
+    if(cur[i] == '"'){
+        i++;
+        int escape = 0;
+        for(j = 0;escape || cur[i] != '"';i++){
+            char c = cur[i];
+            if(c == '\\')
+                escape = 1;
+            else if(escape){
+                switch(c){
+                case '"':
+                    j++;
+                    break;
+                case '\\':
+                    j++;
+                    break;
+                case '/':
+                    j++;
+                    break;
+                case 'b':
+                    j++;
+                    break;
+                case 'f':
+                    j++;
+                    break;
+                case 'n':
+                    j++;
+                    break;
+                case 'r':
+                    j++;
+                    break;
+                case 't':
+                    j++;
+                    break;
+                case 'u':
+                    jp_atix32(&cur[i], &utf);
+                    i += 4;
+                    if(utf <= 0xF7)
+                        j += 1;
+                    else if(utf <= 0x07FF)
+                        j += 2;
+                    else if(utf <= 0xFFFF)
+                        j += 3;
+                    else if(utf <= 0x10FFFF)
+                        j += 4;
+                    break;
+                }
+                escape = 0;
+            }
+            else{
+                j++;
+            }
+        }
+        return j;
+    }
+    return 0;
+}
+int jp_string_comp(const char *cur, const char *str){
+    size_t i = 0, j = 0;
+    uint32_t utf = 0;
+    size_t str_len = strlen(str);
+    if(cur[i] == '"'){
+        i++;
+        int escape = 0;
+        for(j = 0;escape || cur[i] != '"';i++){
+            if(j >= str_len)
+                return 0;
+            char c = cur[i];
+            if(c == '\\')
+                escape = 1;
+            else if(escape){
+                switch(c){
+                case '"':
+                    if(str[j] != '"')
+                        return 0;
+                    j++;
+                    break;
+                case '\\':
+                    if(str[j] != '\\')
+                        return 0;
+                    j++;
+                    break;
+                case '/':
+                    if(str[j] != '/')
+                        return 0;
+                    j++;
+                    break;
+                case 'b':
+                    if(str[j] != '\b')
+                        return 0;
+                    j++;
+                    break;
+                case 'f':
+                    if(str[j] != '\f')
+                        return 0;
+                    j++;
+                    break;
+                case 'n':
+                    if(str[j] != '\n')
+                        return 0;
+                    j++;
+                    break;
+                case 'r':
+                    if(str[j] != '\r')
+                        return 0;
+                    j++;
+                    break;
+                case 't':
+                    if(str[j] != '\t')
+                        return 0;
+                    j++;
+                    break;
+                case 'u':
+                    jp_atix32(&cur[i], &utf);
+                    i += 4;
+                    char buf[4];
+                    size_t n = jp_utf8_encode(&buf[j], utf);
+                    for(size_t k = 0;k < n;k++)
+                        if(buf[k] != str[n+j])
+                            return 0;
+                    j += n;
+                    break;
+                }
+                escape = 0;
+            }
+            else{
+                if(str[j] != c)
+                    return 0;
+                j++;
+            }
+        }
+    }
+    if(j < str_len)
+        return 0;
+}
+
+int jp_utf8_encode(char *dst, uint32_t utf){
+    if(utf <= 0xF7){
+        dst[0] = (char)utf;
+        return 1;
+    }
+    else if(utf <= 0x07FF){
+        dst[0] = (char) (((utf >> 6) & 0x1F) | 0xC0);
+        dst[1] = (char) (((utf >> 0) & 0x3F) | 0x80);
+        return 2;
+    }
+    else if(utf <= 0xFFFF){
+        dst[0] = (char) (((utf >>12) & 0x0F) | 0xE0);
+        dst[1] = (char) (((utf >> 6) & 0x3F) | 0x80);
+        dst[2] = (char) (((utf >> 0) & 0x3F) | 0x80);
+        return 3;
+    }
+    else if(utf <= 0x10FFFF){
+        dst[0] = (char) (((utf >> 18) & 0x07) | 0xF0);
+        dst[1] = (char) (((utf >> 12) & 0x3F) | 0x80);
+        dst[2] = (char) (((utf >>  6) & 0x3F) | 0x80);
+        dst[3] = (char) (((utf >>  0) & 0x3F) | 0x80);
+        return 4;
+    }
+    else{
+        dst[0] = (char) 0xEF;
+        dst[1] = (char) 0xBF;
+        dst[2] = (char) 0xBD;
+        return 3;
+    }
+}
+int jp_atix32(const char *src, uint32_t *dst){
+    *dst = 0;
+    for(size_t i = 0;i < 4;i++){
+        *dst *= 0x10;
+        if(src[i] >= 0 && src[i] <= 9)
+            *dst += src[i] - '0';
+        else if(src[i] >= 'a' && src[i] <= 'f')
+            *dst += src[i] - 'a' + 10;
+        else if(src[i] >= 'A' && src[i] >= 'F')
+            *dst += src[i] - 'A' + 10;
+    }
+    return 1;
+}
 
 #if 0
 char jp_state_getc(const struct jp_state *src, size_t offset){
@@ -339,6 +581,7 @@ struct jp_member jp_member_next(struct jp_member src){
     i += jp_parse_member(&src.state.c[i]);
     if(src.state.c[i] == ','){
         i++;
+        i += jp_parse_ws(&src.state.c[i]);
         dst.state.c = &src.state.c[i];
 #ifdef JP_CALCULATE_SIZE
         dst.state.size = jp_parse_member(dst.state.c)
@@ -451,14 +694,10 @@ int jp_value_string(struct jp_value src, char *dst, size_t dst_size){
     if(!src.state.valid)
         return 0;
 
-    size_t i = 0, j = 0;
-    if(src.state.c[i] == '"'){
-        i++;
-        j += jp_parse_string(&src.state.c[0]);
-        memcpy(dst, &src.state.c[i], MIN(dst_size, j-2));
-        return MIN(dst_size, j-2);
-    }
-    return -1;
+    size_t i = 0;
+    i += jp_parse_ws(&src.state.c[i]);
+    i += jp_string_read(&src.state.c[i], dst, dst_size);
+    return i;
 }
 int jp_value_number(const struct jp_value src, double *dst){
     if(!src.state.valid)
@@ -472,14 +711,9 @@ int jp_member_name(const struct jp_member src, char *dst, size_t dst_size){
     if(!src.state.valid)
         return 0;
 
-    size_t i = 0, j = 0;
-    i += jp_parse_ws(&src.state.c[i]);
-    if(src.state.c[i] == '"'){
-        j += jp_parse_string(&src.state.c[i]);
-        memcpy(dst, &src.state.c[i], MIN(j, dst_size));
-        return MIN(j, dst_size);
-    }
-    return -1;
+    size_t i = 0;
+    i += jp_string_read(&src.state.c[i], dst, dst_size);
+    return i;
 }
 #endif
 
@@ -500,7 +734,8 @@ struct jp_object jp_element_object(struct jp_element src){
     return jp_value_object(jp_element_value(src));
 }
 int jp_element_string(struct jp_element src, char *dst, size_t dst_size){
-    return jp_value_string(jp_element_value(src), dst, dst_size);
+    struct jp_value v = jp_element_value(src);
+    return jp_value_string(v, dst, dst_size);
 }
 int jp_element_number(struct jp_element src, double *dst){
     return jp_value_number(jp_element_value(src), dst);
@@ -511,12 +746,9 @@ int jp_member_namecomp(const struct jp_member src, const char *str){
 
     size_t i = 0, j = 0;
     i += jp_parse_ws(&src.state.c[i]);
-    j = jp_parse_string(&src.state.c[i]);
-    if(strlen(str) == j-2){
-        if(memcmp(str, &src.state.c[i+1], j-2) == 0)
-            return 1;
-    }
-    return 0;
+    if(!jp_string_comp(&src.state.c[i], str))
+        return 0;
+    return 1;
 }
 struct jp_member jp_members_search(struct jp_member src, const char *str){
     if(!src.state.valid)
@@ -569,8 +801,8 @@ int jp_member_namelen(struct jp_member src){
 
     size_t i = 0, j = 0;
     i += jp_parse_ws(&src.state.c[i]);
-    j = jp_parse_string(&src.state.c[i]);
-    return j-2;
+    j = jp_string_len(&src.state.c[i]);
+    return j;
 }
 int jp_value_strlen(struct jp_value src){
     if(!src.state.valid)
@@ -578,8 +810,8 @@ int jp_value_strlen(struct jp_value src){
 
     size_t i = 0, j = 0;
     i += jp_parse_ws(&src.state.c[i]);
-    j = jp_parse_string(&src.state.c[i]);
-    return j-2;
+    j = jp_string_len(&src.state.c[i]);
+    return j;
 }
 int jp_element_strlen(struct jp_element src){
     return jp_value_strlen(jp_element_value(src));

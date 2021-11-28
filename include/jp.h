@@ -138,4 +138,11 @@ int jp_parse_object(const char *cur);
 int jp_parse_value(const char *cur);
 int jp_parse_json(const char *cur);
 
+int jp_string_read(const char *cur, char *dst, size_t dst_size);
+int jp_string_len(const char *cur);
+int jp_string_comp(const char *cur, const char *str);
+
+int jp_utf8_encode(char *dst, uint32_t utf);
+int jp_atix32(const char *src, uint32_t *dst);
+
 #endif //JP_H

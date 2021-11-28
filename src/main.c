@@ -19,7 +19,7 @@ const char text[] = "\
                     \"Abbrev\": \"ISO 8879:1986\",\
                     \"GlossDef\": {\
                         \"para\": \"A meta-markup language, used to create markup languages such as DocBook.\",\
-                        \"GlossSeeAlso\": [\"GML\", \"XML\"]\
+                        \"GlossSeeAlso\": [\"GML\\u262d\", \"XML\"]\
                     },\
                     \"GlossSee\": \"markup\"\
                 }\
@@ -39,14 +39,15 @@ int main(){
     struct jp_element e1 = jp_member_element(m1);
 
     struct jp_member m2 = jp_element_member(e1);
-    //printf("%s\n\n", m2.state.c);
     m2 = jp_members_search(m2, "GlossDiv");
+    //printf("%s\n\n", m2.state.c);
 
     struct jp_member m3 = jp_member_member(m2);
 
     m3 = jp_members_search(m3, "GlossList");
     m3 = jp_member_member(m3);
     m3 = jp_member_member(m3);
+    //printf("%s\n\n", m3.state.c);
     jp_members_foreach(m3, i){
         char buf[100] = {0};
         jp_member_name(i, buf, 100);
