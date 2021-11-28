@@ -464,6 +464,7 @@ int jp_string_comp(const char *cur, const char *str){
     }
     if(j < str_len)
         return 0;
+    return 1;
 }
 
 int jp_utf8_encode(char *dst, uint32_t utf){
