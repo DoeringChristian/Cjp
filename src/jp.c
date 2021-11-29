@@ -854,6 +854,7 @@ int jp_atod(struct jp_state src, double *dst){
         return 0;
 
     size_t i = 0;
+    *dst = 0;
     int neg = 0, exp_neg = 0;
     char c = 0;
     double tmp1 = 0, tmp2 = 0;
@@ -865,7 +866,7 @@ int jp_atod(struct jp_state src, double *dst){
     }
     if((c = jp_state_getat(src, i)) == '.'){
         i++;
-        tmp2 = 0.1;
+        tmp2 = 1;
         for(;(c = jp_state_getat(src, i)) >= '0' && c <= '9';i++){
             tmp1 *= 10;
             tmp2 /= 10;

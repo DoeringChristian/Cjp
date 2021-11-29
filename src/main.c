@@ -84,6 +84,29 @@ int main(){
 
     printf("%s: %lf\n", buf, d);
 
+    m = jp_members_search(m, "Timo");
+
+    memset(buf, 0, 100);
+    jp_member_string(m, buf, 100);
+
+    printf("Timo is: %s\n", buf);
+
+    m = jp_members_search(m, "positions");
+
+    struct jp_array a = jp_member_array(m);
+
+    jp_array_foreach(a, i){
+        struct jp_array a2 = jp_element_array(i);
+        struct jp_element e = jp_array_element(a2);
+        double n1, n2;
+        jp_element_number(e, &n1);
+        e = jp_element_next(e);
+        jp_element_number(e, &n2);
+
+        printf("%lf, %lf\n", n1, n2);
+
+    }
+
 
 #if 0
     struct jp_element e2 = jp_member_element(m2);
