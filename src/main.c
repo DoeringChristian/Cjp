@@ -32,7 +32,8 @@ const char text[] = "\
 
 int main(){
 
-    struct jp_element e = jp_element(text);
+    struct jp_parser p1 = jp_parser(text);
+    struct jp_element e = jp_element(&p1);
 
     struct jp_member m1 = jp_element_member(e);
 
@@ -65,11 +66,12 @@ int main(){
         printf("%s\n\n", buf);
     }
 
-    printf("%s\n\n", e3.state.buf);
+    printf("%s\n\n", e3.state.parser->buffer.buf);
 
     FILE *fp = fopen("res/test.json", "r");
 
-    e = jp_element_file(fp);
+    struct jp_parser p2 = jp_parser_file(fp);
+    e = jp_element(&p2);
 
     struct jp_member m = jp_element_member(e);
 

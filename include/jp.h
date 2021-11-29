@@ -36,19 +36,23 @@ enum jp_type{
 
 static const double d_nan = (0.0f / 0.0f);
 
-struct jp_state{
-    int valid;
-    int size;
+struct jp_parser{
     enum jp_type type;
-    size_t index;
     union{
         struct{
             const char *buf;
-        };
+        } buffer;
         struct{
             FILE *fp;
-        };
+        } file;
     };
+};
+
+struct jp_state{
+    struct jp_parser *parser;
+    int valid;
+    int size;
+    size_t index;
 };
 
 struct jp_object{
@@ -71,15 +75,21 @@ struct jp_array{
     struct jp_state state;
 };
 
+
+int jp_parser_init_buf(struct jp_parser *dst, const char *buf);
+int jp_parser_init_file(struct jp_parser *dst, FILE *fp);
+struct jp_parser jp_parser(const char *buf);
+struct jp_parser jp_parser_file(FILE *fp);
+
+char jp_parser_getat(struct jp_parser *src, size_t index);
+
+struct jp_state jp_state(struct jp_parser *src);
+
 char jp_state_getat(const struct jp_state src, size_t offset);
 struct jp_state jp_state_offset(struct jp_state src, size_t offset);
 int jp_state_memcmp(struct jp_state src, const void *src2, size_t src_size);
 
-struct jp_state jp_state(const char *src);
-struct jp_state jp_state_file(FILE *fp);
-
-struct jp_element jp_element(const char *src);
-struct jp_element jp_element_file(FILE *fp);
+struct jp_element jp_element(struct jp_parser *src);
 
 struct jp_element jp_element_next(struct jp_element src);
 struct jp_value jp_element_value(struct jp_element src);
@@ -93,7 +103,7 @@ int jp_element_string(struct jp_element src, char *dst, size_t dst_size);
 int jp_element_number(struct jp_element src, double *dst);
 enum jp_tfn jp_element_tfn(struct jp_element src);
 
-struct jp_member jp_member(const char *src);
+struct jp_member jp_member(struct jp_parser *src);
 
 struct jp_member jp_members_search(struct jp_member src, const char *str);
 struct jp_member jp_member_member(struct jp_member src);

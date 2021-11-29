@@ -514,28 +514,37 @@ int jp_atoix32(struct jp_state src, uint32_t *dst){
     return 1;
 }
 
-#if 0
-char jp_state_getc(const struct jp_state *src, size_t offset){
-    switch(src->type){
-    case JP_TYPE_BUF:
-        return src->buf[src->index + offset];
-    case JP_TYPE_FILE:
-        return 0;
-    }
+
+
+
+
+int jp_parser_init_buf(struct jp_parser *dst, const char *buf){
+    dst->buffer.buf = buf;
+    dst->type = JP_TYPE_BUF;
+    return 1;
 }
-#endif
+int jp_parser_init_file(struct jp_parser *dst, FILE *fp){
+    dst->file.fp = fp;
+    dst->type = JP_TYPE_FILE;
+    return 1;
+}
+struct jp_parser jp_parser(const char *buf){
+    struct jp_parser dst;
+    jp_parser_init_buf(&dst, buf);
+    return dst;
+}
+struct jp_parser jp_parser_file(FILE *fp){
+    struct jp_parser dst;
+    jp_parser_init_file(&dst, fp);
+    return dst;
+}
 
-
-
-
-
-struct jp_state jp_state(const char *src){
+struct jp_state jp_state(struct jp_parser *src){
     struct jp_state dst = {
+        .parser = src,
         .valid = 1,
-        .buf = src, 
         .size = 0,
 #if 1
-        .type = JP_TYPE_BUF,
         .index = 0,
 #endif
     };
@@ -549,35 +558,11 @@ struct jp_state jp_state(const char *src){
     return dst;
 }
 
-struct jp_state jp_state_file(FILE *fp){
-    struct jp_state dst = {
-        .valid = 1,
-        .fp = fp,
-        .size = 0,
-#if 1
-        .type = JP_TYPE_FILE,
-        .index = 0,
-#endif
-    };
-#ifdef JP_CALCULATE_SIZE
-    dst.size = jp_parse_json(src);
-#endif
-#ifdef JP_VALIDATE
-    if(jp_parse_json(src) == 0)
-        dst.valid = 0;
-#endif
-    return dst;
-}
-
-struct jp_element jp_element(const char *src){
+struct jp_element jp_element(struct jp_parser *src){
     return (struct jp_element){.state = jp_state(src)};
 }
 
-struct jp_element jp_element_file(FILE *fp){
-    return (struct jp_element){.state = jp_state_file(fp)};
-}
-
-struct jp_member jp_member(const char *src){
+struct jp_member jp_member(struct jp_parser *src){
     return jp_element_member(jp_element(src));
 }
 
@@ -850,30 +835,12 @@ int jp_member_strlen(struct jp_member src){
 }
 
 char jp_state_getat(struct jp_state src, size_t offset){
-    char buf[1];
-    switch(src.type){
-    case JP_TYPE_BUF:
-        return src.buf[src.index + offset];
-        break;
-    case JP_TYPE_FILE:
-        if(fseek(src.fp, src.index + offset, SEEK_SET) != 0)
-            return 0;
-        if(fread(buf, 1, 1, src.fp) <= 0)
-            return 0;
-        return buf[0];
-        break;
-    }
+    return jp_parser_getat(src.parser, src.index + offset);
 }
 struct jp_state jp_state_offset(struct jp_state src, size_t offset){
     struct jp_state dst = src;
-    switch(src.type){
-    case JP_TYPE_BUF:
-        dst.index += offset;
-        return dst;
-    case JP_TYPE_FILE:
-        dst.index += offset;
-        return dst;
-    }
+    dst.index += offset;
+    return dst;
 }
 int jp_state_memcmp(struct jp_state src1, const void *src2, size_t src_size){
     for(size_t i = 0;i < src_size;i++){
@@ -925,4 +892,21 @@ int jp_atod(struct jp_state src, double *dst){
         *dst *= pow(10, tmp1);
     }
     return i;
+}
+char jp_parser_getat(struct jp_parser *src, size_t index){
+    char c;
+    switch(src->type){
+    case JP_TYPE_BUF:
+        return src->buffer.buf[index];
+        break;
+    case JP_TYPE_FILE:
+        if(ftell(src->file.fp) != index)
+            if(fseek(src->file.fp, index, SEEK_SET) != 0)
+                return 0;
+        if((c = getc(src->file.fp)) >= 0)
+            return c;
+        break;
+    }
+    return 0;
+
 }
