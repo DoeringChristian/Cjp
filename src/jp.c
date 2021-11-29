@@ -318,12 +318,12 @@ int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
                 case 'u':
                     i++;
                     jp_atoix32(jp_state_offset(src, i), &utf);
-                    i += 4;
-                    size_t k = jp_utf8_encode(buf, utf);
-                    if(j >= dst_size)
+                    i += 3;
+                    size_t n = jp_utf8_encode(buf, utf);
+                    if((j + n) >= dst_size)
                         return j;
-                    memcpy(&dst[j], buf, k);
-                    j += k;
+                    memcpy(&dst[j], buf, n);
+                    j += n;
                     break;
                 }
                 escape = 0;
@@ -374,8 +374,9 @@ int jp_string_len(struct jp_state src){
                     j++;
                     break;
                 case 'u':
+                    i++;
                     jp_atoix32(jp_state_offset(src, i), &utf);
-                    i += 4;
+                    i += 3;
                     if(utf <= 0xF7)
                         j += 1;
                     else if(utf <= 0x07FF)
@@ -452,10 +453,13 @@ int jp_string_comp(struct jp_state src, const char *str){
                     j++;
                     break;
                 case 'u':
+                    i++;
                     jp_atoix32(jp_state_offset(src, i), &utf);
-                    i += 4;
+                    i += 3;
                     char buf[4];
                     size_t n = jp_utf8_encode(&buf[j], utf);
+                    if((j + n) >= str_len)
+                        return 0;
                     for(size_t k = 0;k < n;k++)
                         if(buf[k] != str[n+j])
                             return 0;

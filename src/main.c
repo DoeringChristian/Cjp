@@ -76,6 +76,7 @@ int main(){
     struct jp_member m = jp_element_member(e);
 
     char buf[100] = {0};
+    memset(buf, 0, 100);
 
     jp_member_name(m, buf, 100);
 
@@ -83,7 +84,7 @@ int main(){
     jp_member_number(m, &d);
 
 
-    printf("%s: %lf\n", buf, d);
+    printf("%s: %lf\n", buf, d * 2);
     uint8_t t = buf[4];
     printf("%x\n", t);
 
