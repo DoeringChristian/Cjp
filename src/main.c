@@ -82,7 +82,10 @@ int main(){
     double d;
     jp_member_number(m, &d);
 
+
     printf("%s: %lf\n", buf, d);
+    uint8_t t = buf[4];
+    printf("%x\n", t);
 
     memset(buf, 0, 100);
     jp_member_string(m, buf, 100);

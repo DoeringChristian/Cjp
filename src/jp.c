@@ -316,6 +316,7 @@ int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
                     j++;
                     break;
                 case 'u':
+                    i++;
                     jp_atoix32(jp_state_offset(src, i), &utf);
                     i += 4;
                     size_t k = jp_utf8_encode(buf, utf);
@@ -476,7 +477,7 @@ int jp_string_comp(struct jp_state src, const char *str){
 }
 
 int jp_utf8_encode(char *dst, uint32_t utf){
-    if(utf <= 0xF7){
+    if(utf <= 0x7F){
         dst[0] = (char)utf;
         return 1;
     }
@@ -509,12 +510,13 @@ int jp_atoix32(struct jp_state src, uint32_t *dst){
     *dst = 0;
     for(size_t i = 0;i < 4;i++){
         *dst *= 0x10;
-        if(jp_state_getat(src, i) >= 0 && jp_state_getat(src, i) <= 9)
-            *dst += jp_state_getat(src, i) - '0';
-        else if(jp_state_getat(src, i) >= 'a' && jp_state_getat(src, i) <= 'f')
-            *dst += jp_state_getat(src, i) - 'a' + 10;
-        else if(jp_state_getat(src, i) >= 'A' && jp_state_getat(src, i) >= 'F')
-            *dst += jp_state_getat(src, i) - 'A' + 10;
+        char c = jp_state_getat(src, i);
+        if(c >= '0' && c <= '9')
+            *dst += c - '0';
+        else if(c >= 'a' && c <= 'f')
+            *dst += c - 'a' + 0x0a;
+        else if(c >= 'A' && c <= 'F')
+            *dst += c - 'A' + 0x0a;
     }
     return 1;
 }
