@@ -273,6 +273,7 @@ int jp_parse_json(struct jp_state src){
 int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
     size_t i = 0, j = 0;
     uint32_t utf = 0;
+    char buf[4];
     if(jp_state_getat(src, i) == '"'){
         i++;
         int escape = 0;
@@ -317,7 +318,11 @@ int jp_string_read(struct jp_state src, char *dst, size_t dst_size){
                 case 'u':
                     jp_atoix32(jp_state_offset(src, i), &utf);
                     i += 4;
-                    j += jp_utf8_encode(&dst[j], utf);
+                    size_t k = jp_utf8_encode(buf, utf);
+                    if(j >= dst_size)
+                        return j;
+                    memcpy(&dst[j], buf, k);
+                    j += k;
                     break;
                 }
                 escape = 0;

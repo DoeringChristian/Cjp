@@ -84,12 +84,8 @@ int main(){
 
     printf("%s: %lf\n", buf, d);
 
-    m = jp_members_search(m, "Timo");
-
     memset(buf, 0, 100);
     jp_member_string(m, buf, 100);
-
-    printf("Timo is: %s\n", buf);
 
     m = jp_members_search(m, "positions");
 
