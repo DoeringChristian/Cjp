@@ -98,6 +98,7 @@ struct jp_member jp_member_next(struct jp_member src);
 struct jp_element jp_member_element(struct jp_member src);
 struct jp_array jp_element_array(struct jp_element src);
 struct jp_object jp_element_object(struct jp_element src);
+struct jp_member jp_element_member_search(struct jp_element src, const char *str);
 int jp_element_strlen(struct jp_element src);
 int jp_element_string(struct jp_element src, char *dst, size_t dst_size);
 int jp_element_number(struct jp_element src, double *dst);

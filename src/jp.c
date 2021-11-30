@@ -922,3 +922,6 @@ char jp_parser_getat(struct jp_parser *src, size_t index){
     return 0;
 
 }
+struct jp_member jp_element_member_search(struct jp_element src, const char *str){
+    return jp_members_search(jp_element_member(src), str);
+}
